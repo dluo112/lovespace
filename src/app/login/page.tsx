@@ -35,7 +35,7 @@ export default function LoginPage() {
       setProfiles(data);
       
       const settings = await getSystemSettings();
-      if (settings.success) {
+      if (settings.success && settings.data) {
         setEnableGuest(settings.data.enableGuestAccess);
       }
     }

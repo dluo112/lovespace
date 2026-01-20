@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import confetti from 'canvas-confetti';
 
 interface MangaCatProps {
@@ -285,7 +285,7 @@ export default function MangaCat({ role = 'GUEST', partnerMood }: MangaCatProps)
     }, 2000);
   };
 
-  const containerVariants = {
+  const containerVariants: Variants = {
     idle: {
       y: [0, -3, 0],
       transition: {
