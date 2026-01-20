@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet'
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { updateLocation, getPartnersLocation } from '@/app/actions/location';
+import { wgs84ToGcj02 } from '@/lib/coord';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Loader2, MapPin } from 'lucide-react';
 import Link from 'next/link';
@@ -96,11 +97,11 @@ export default function RealLoveMap() {
                     zoomControl={false}
                 >
                     {/* Dreamy Map Filter */}
-                    <div className="leaflet-tile-pane" style={{ filter: 'sepia(0.5) hue-rotate(320deg) saturate(1.2) contrast(0.9)' }}></div>
+                    <div className="leaflet-tile-pane" style={{ filter: 'sepia(0.2) hue-rotate(320deg) saturate(1.1) contrast(0.95)' }}></div>
                     
                     <TileLayer
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        attribution='&copy; <a href="https://www.amap.com/">Gaode Maps</a>'
+                        url="https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}"
                     />
 
                     {/* Partners Markers */}

@@ -63,7 +63,7 @@ export async function reverseGeocodeAmap(lat: number, lng: number) {
         return { success: false, error: 'Missing AMAP_KEY' };
     }
     
-    const res = await fetch(`https://restapi.amap.com/v3/geocode/regeo?output=json&location=${lng},${lat}&key=${key}&radius=1000&extensions=all`);
+    const res = await fetch(`https://restapi.amap.com/v3/geocode/regeo?output=json&location=${lng},${lat}&key=${key}&radius=1000&extensions=all&coordsys=gps`);
     const data = await res.json();
     
     if (data.status === '1' && data.regeocode) {

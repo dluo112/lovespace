@@ -48,92 +48,12 @@ export default function CreateFab() {
             setGettingLocation(false);
             return;
           }
-          console.warn('AMap failed/missing key, trying fallbacks...', amapRes.error);
+          console.warn('AMap failed/missing key', amapRes.error);
         } catch (e) {
           console.warn('AMap action failed', e);
         }
-        
-        // Strategy 2: ArcGIS (High precision, usually fast)
-        try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 5000);
-          
-          const res = await fetch(
-            `https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/reverseGeocode?f=json&featureTypes=&location=${longitude},${latitude}&langCode=zh-CN`,
-            { signal: controller.signal }
-          );
-          clearTimeout(timeoutId);
-          
-          if (res.ok) {
-            const data = await res.json();
-            if (data.address && data.address.Match_addr) {
-              loc = data.address.Match_addr;
-              setLocation(loc);
-              setGettingLocation(false);
-              return;
-            }
-          }
-        } catch (e) {
-          console.warn('ArcGIS failed, trying Nominatim...', e);
-        }
 
-        // Strategy 3: Nominatim (High precision, might be slow)
-        try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 8000);
-          
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=zh-CN`,
-            { 
-              signal: controller.signal,
-              headers: {
-                'User-Agent': 'LoveSpace/1.0'
-              }
-            }
-          );
-          clearTimeout(timeoutId);
-          
-          if (res.ok) {
-            const data = await res.json();
-            const addr = data.address;
-            if (addr) {
-              // Construct a readable address
-              const parts = [
-                addr.road,
-                addr.suburb || addr.district,
-                addr.city || addr.town,
-              ].filter(Boolean);
-              if (parts.length > 0) {
-                loc = parts.join(', ');
-                setLocation(loc);
-                setGettingLocation(false);
-                return;
-              }
-            }
-          }
-        } catch (e) {
-          console.warn('Nominatim failed, trying BigDataCloud...', e);
-        }
-
-        // Strategy 4: BigDataCloud (City level, reliable fallback)
-        try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 5000);
-          
-          const res = await fetch(
-            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=zh`,
-            { signal: controller.signal }
-          );
-          clearTimeout(timeoutId);
-          
-          if (res.ok) {
-            const data = await res.json();
-            loc = data.city || data.locality || data.principalSubdivision || 'Unknown Location';
-          }
-        } catch (e) {
-          console.error('All location services failed', e);
-        }
-
+        // All location services failed (or fallback disabled)
         setLocation(loc);
         setGettingLocation(false);
       },
