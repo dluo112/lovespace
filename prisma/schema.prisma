@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique // 'boy' or 'girl'
+  password  String?  // Hashed or simple text for demo (will use simple for now as requested)
+  name      String?  // Display name (e.g. "Him")
+  avatar    String?  // DiceBear URL
+  real_name String?  // Real name, cannot be changed
+  role      Role     @default(ADMIN)
+  capsules  Capsule[]
+  mood      String?  // 'happy', 'sad', 'angry', 'neutral', 'loving'
+  moodTime  DateTime? // When the mood was last updated
+  lat       Float?    // Latitude
+  lng       Float?    // Longitude
+  locationTime DateTime? // When location was last updated
+}
+
+enum Role {
+  ADMIN
+  GUEST
+}
+
+model AppConfig {
+  id                String   @id @default(cuid())
+  startDate         DateTime @default("2023-01-01T00:00:00Z")
+  enableGuestAccess Boolean  @default(true)
+  musicUrl          String?
+}
+
+model Memory {
+  id        String    @id @default(cuid())
+  content   String
+  images    Json?
+  location  String?
+  createdAt DateTime  @default(now())
+  isPublic  Boolean   @default(false)
+  comments  Comment[]
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  author    String   // Name or 'Guest'
+  createdAt DateTime @default(now())
+  memoryId  String
+  memory    Memory   @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+}
+
+model Anniversary {
+  id          String   @id @default(cuid())
+  title       String
+  date        DateTime
+  description String?
+}
+
+model Capsule {
+  id         String   @id @default(cuid())
+  content    String
+  images     Json?
+  audio      String?
+  unlockDate DateTime
+  isOpened   Boolean  @default(false)
+  type       String   @default("SELF") // 'SELF' or 'PARTNER'
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+}
