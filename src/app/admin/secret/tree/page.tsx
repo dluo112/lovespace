@@ -161,7 +161,7 @@ export default function TreePage() {
             {/* --- Main Scene --- */}
             
             {/* The Tree Container */}
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-2xl h-[80vh] flex items-end justify-center pointer-events-none z-10">
+            <div className="absolute bottom-20 md:bottom-0 left-1/2 -translate-x-1/2 w-full max-w-2xl h-[70vh] md:h-[80vh] flex items-end justify-center pointer-events-none z-10">
                 <LoveTree daysTogether={stats.days} memoryCount={stats.memories} />
             </div>
 

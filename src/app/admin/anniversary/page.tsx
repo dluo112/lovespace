@@ -57,7 +57,7 @@ export default async function AnniversaryPage() {
       <main className="px-4 py-6 max-w-md mx-auto space-y-8">
         {/* Hero Card - Next Event */}
         {nextEvent ? (
-          <div className="relative overflow-hidden rounded-3xl shadow-xl shadow-pink-200/50 bg-gradient-to-br from-brand-pink via-purple-400 to-indigo-400 text-white p-8">
+          <div className="relative overflow-hidden rounded-3xl shadow-xl shadow-pink-200/50 bg-gradient-to-br from-[#FFB6C1] via-purple-400 to-indigo-400 text-white p-8">
             <div className="absolute top-0 right-0 p-8 opacity-10">
                 <Heart size={120} fill="currentColor" />
             </div>

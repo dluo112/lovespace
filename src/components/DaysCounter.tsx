@@ -29,7 +29,7 @@ export default function DaysCounter() {
     <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative w-full h-40 flex flex-col items-center justify-center overflow-hidden mb-2 rounded-xl shadow-sm mx-auto bg-gradient-to-br from-brand-pink via-purple-300 to-blue-200"
+      className="relative w-full h-40 flex flex-col items-center justify-center overflow-hidden mb-2 rounded-xl shadow-sm mx-auto bg-gradient-to-br from-[#FFB6C1] via-purple-300 to-blue-200"
     >
       {/* Background Breathing Animation - Simplified */}
       <motion.div

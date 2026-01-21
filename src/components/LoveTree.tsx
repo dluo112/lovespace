@@ -60,7 +60,7 @@ export default function LoveTree({ daysTogether, memoryCount }: LoveTreeProps) {
       <svg 
         width="100%" 
         height="100%" 
-        viewBox="-200 -400 400 400" 
+        viewBox="-300 -600 600 600" 
         preserveAspectRatio="xMidYBottom" 
         className="drop-shadow-xl"
       >
