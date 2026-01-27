@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useActionState, useEffect } from 'react';
+import { useState, useActionState, useEffect, useTransition } from 'react';
 import { MapPin, Globe, Loader2, Image as ImageIcon, X } from 'lucide-react';
 import { updateMemory } from '@/app/actions/admin';
 
@@ -11,11 +11,19 @@ const initialState = {
 
 export default function EditMemoryForm({ memory, onSuccess }: { memory: any, onSuccess: () => void }) {
   const [state, formAction, isPending] = useActionState(updateMemory.bind(null, memory.id), initialState);
+  const [isTransitionPending, startTransition] = useTransition();
   
   const [content, setContent] = useState(memory.content);
   const [location, setLocation] = useState(memory.location || '');
   const [isPublic, setIsPublic] = useState(memory.isPublic);
-  const [images, setImages] = useState<string[]>(Array.isArray(memory.images) ? memory.images : []);
+  
+  // Existing images (URLs)
+  const [existingImages, setExistingImages] = useState<string[]>(Array.isArray(memory.images) ? memory.images : []);
+  
+  // New files to be uploaded
+  const [newFiles, setNewFiles] = useState<File[]>([]);
+  const [newPreviews, setNewPreviews] = useState<string[]>([]);
+  
   const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
@@ -24,41 +32,74 @@ export default function EditMemoryForm({ memory, onSuccess }: { memory: any, onS
     }
   }, [state.success, onSuccess]);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    setIsUploading(true);
+    const filesArr = Array.from(files);
+    setNewFiles(prev => [...prev, ...filesArr]);
     
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const formData = new FormData();
-      formData.append('file', file);
-
-      try {
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
-        const data = await res.json();
-        if (data.success) {
-          setImages(prev => [...prev, data.url]);
-        }
-      } catch (err) {
-        console.error('Upload failed', err);
-      }
-    }
-    
-    setIsUploading(false);
+    const previews = filesArr.map(file => URL.createObjectURL(file));
+    setNewPreviews(prev => [...prev, ...previews]);
   };
 
-  const removeImage = (index: number) => {
-    setImages(prev => prev.filter((_, i) => i !== index));
+  const removeExistingImage = (index: number) => {
+    setExistingImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const removeNewImage = (index: number) => {
+    setNewFiles(prev => prev.filter((_, i) => i !== index));
+    setNewPreviews(prev => {
+      const next = prev.filter((_, i) => i !== index);
+      URL.revokeObjectURL(prev[index]);
+      return next;
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsUploading(true);
+
+    try {
+      const newImageUrls: string[] = [];
+      
+      // Upload new files
+      for (const file of newFiles) {
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        try {
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData,
+          });
+          const data = await res.json();
+          if (data.success) {
+            newImageUrls.push(data.url);
+          }
+        } catch (err) {
+          console.error('Upload failed', err);
+        }
+      }
+
+      // Combine existing and new images
+      const finalImages = [...existingImages, ...newImageUrls];
+
+      const formData = new FormData(e.currentTarget);
+      formData.set('images', JSON.stringify(finalImages));
+      
+      startTransition(() => {
+        formAction(formData);
+      });
+    } catch (error) {
+      console.error('Submit error', error);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
-    <form action={formAction} className="space-y-6">
-      <input type="hidden" name="images" value={JSON.stringify(images)} />
+    <form onSubmit={handleSubmit} className="space-y-6">
       
       {/* Content */}
       <div className="space-y-2">
@@ -77,22 +118,35 @@ export default function EditMemoryForm({ memory, onSuccess }: { memory: any, onS
       <div className="space-y-2">
         <label className="text-sm font-medium text-slate-700">图片</label>
         
-        {images.length > 0 && (
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide mb-2">
-            {images.map((img, idx) => (
-              <div key={idx} className="relative flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden group">
-                <img src={img} alt="Preview" className="w-full h-full object-cover" />
-                <button
-                  type="button"
-                  onClick={() => removeImage(idx)}
-                  className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <X size={12} />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide mb-2">
+          {/* Existing Images */}
+          {existingImages.map((img, idx) => (
+            <div key={`existing-${idx}`} className="relative flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden group">
+              <img src={img} alt="Existing" className="w-full h-full object-cover" />
+              <button
+                type="button"
+                onClick={() => removeExistingImage(idx)}
+                className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <X size={12} />
+              </button>
+            </div>
+          ))}
+
+          {/* New Previews */}
+          {newPreviews.map((img, idx) => (
+            <div key={`new-${idx}`} className="relative flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden group border-2 border-brand-pink/50">
+              <img src={img} alt="新图片预览" className="w-full h-full object-cover" />
+              <button
+                type="button"
+                onClick={() => removeNewImage(idx)}
+                className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <X size={12} />
+              </button>
+            </div>
+          ))}
+        </div>
 
         <label className={`flex items-center gap-2 px-4 py-3 bg-slate-50 border border-slate-200 border-dashed rounded-xl text-slate-500 text-sm font-medium hover:bg-slate-100 transition-colors cursor-pointer justify-center ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
           <ImageIcon size={18} />
@@ -152,10 +206,10 @@ export default function EditMemoryForm({ memory, onSuccess }: { memory: any, onS
       <div className="pt-2">
         <button
           type="submit"
-          disabled={isPending}
+          disabled={isPending || isTransitionPending || isUploading}
           className="w-full bg-slate-800 text-white py-3 rounded-xl font-medium shadow-lg hover:shadow-xl hover:bg-slate-900 active:scale-[0.98] transition-all disabled:opacity-70 flex items-center justify-center gap-2"
         >
-          {isPending ? '保存中...' : '保存更改'}
+          {isPending || isTransitionPending || isUploading ? '保存中...' : '保存更改'}
         </button>
       </div>
     </form>

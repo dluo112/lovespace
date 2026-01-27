@@ -64,9 +64,10 @@ export default async function MemoryDetailPage({ params }: { params: { id: strin
                    {/* Use standard img tag for full detail view to avoid complexity with sizes/aspect ratio, or Next Image with specific config */}
                    <img 
                     src={img as string} 
-                    alt={`Memory image ${idx + 1}`}
+                    alt={`回忆图片 ${idx + 1}`}
                     className="w-full h-auto object-contain max-h-[500px]"
                     loading="lazy"
+                    suppressHydrationWarning
                    />
                 </div>
               ))}

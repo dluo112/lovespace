@@ -19,7 +19,7 @@ export default async function GuestMemoryDetailPage({ params }: { params: { id: 
         <Link href="/guest/timeline" className="text-slate-500 hover:text-slate-800 transition-colors">
           <ChevronLeft size={24} />
         </Link>
-        <h1 className="text-lg font-semibold text-slate-800 tracking-tight flex-1">Memory Details</h1>
+        <h1 className="text-lg font-semibold text-slate-800 tracking-tight flex-1">回忆详情</h1>
       </header>
 
       <main className="px-4 py-6 max-w-md mx-auto space-y-6">
@@ -52,7 +52,7 @@ export default async function GuestMemoryDetailPage({ params }: { params: { id: 
                 <div key={idx} className="relative w-full rounded-xl overflow-hidden bg-slate-100 border border-slate-100 shadow-sm">
                    <img 
                     src={img as string} 
-                    alt={`Memory image ${idx + 1}`}
+                    alt={`回忆图片 ${idx + 1}`}
                     className="w-full h-auto object-contain max-h-[500px]"
                     loading="lazy"
                    />

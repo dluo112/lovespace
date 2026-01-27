@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useActionState, useEffect } from 'react';
+import { useState, useActionState, useEffect, useTransition } from 'react';
 import { Plus, X, Image as ImageIcon, MapPin, Globe, Lock, Loader2, LocateFixed } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createMemory } from '@/app/actions/admin';
@@ -15,9 +15,11 @@ const initialState = {
 export default function CreateFab() {
   const [isOpen, setIsOpen] = useState(false);
   const [state, formAction, isPending] = useActionState(createMemory, initialState);
+  const [isTransitionPending, startTransition] = useTransition();
   const [isPublic, setIsPublic] = useState(false);
   
-  const [images, setImages] = useState<string[]>([]);
+  const [files, setFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
   const [location, setLocation] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
@@ -25,9 +27,10 @@ export default function CreateFab() {
   useEffect(() => {
     if (state.success && state.timestamp) {
       setIsOpen(false);
-      setImages([]); // Reset images
-      setLocation(''); // Reset location
-      setIsPublic(false); // Reset public toggle
+      setFiles([]);
+      setPreviews([]);
+      setLocation(''); 
+      setIsPublic(false); 
     }
   }, [state.timestamp, state.success]);
 
@@ -65,37 +68,77 @@ export default function CreateFab() {
     );
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = e.target.files;
+    if (!selectedFiles || selectedFiles.length === 0) return;
 
-    setIsUploading(true);
-    
-    // Upload each file
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const formData = new FormData();
-      formData.append('file', file);
+    const newFiles = Array.from(selectedFiles);
+    setFiles(prev => [...prev, ...newFiles]);
 
-      try {
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
-        const data = await res.json();
-        if (data.success) {
-          setImages(prev => [...prev, data.url]);
-        }
-      } catch (err) {
-        console.error('Upload failed', err);
-      }
-    }
-    
-    setIsUploading(false);
+    // Generate previews
+    const newPreviews = newFiles.map(file => URL.createObjectURL(file));
+    setPreviews(prev => [...prev, ...newPreviews]);
   };
 
   const removeImage = (index: number) => {
-    setImages(prev => prev.filter((_, i) => i !== index));
+    setFiles(prev => prev.filter((_, i) => i !== index));
+    setPreviews(prev => {
+      const newPreviews = prev.filter((_, i) => i !== index);
+      // Revoke the old URL to avoid memory leaks
+      URL.revokeObjectURL(prev[index]);
+      return newPreviews;
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsUploading(true);
+
+    // Capture form element immediately to avoid losing context in async/await
+    const formElement = e.currentTarget as unknown as HTMLFormElement;
+
+    try {
+      const imageUrls: string[] = [];
+      
+      // Upload files
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        try {
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData,
+          });
+          const data = await res.json();
+          if (data.success) {
+            imageUrls.push(data.url);
+          }
+        } catch (err) {
+          console.error('Upload failed for file', file.name, err);
+        }
+      }
+
+      // Construct form data for server action
+      const formData = new FormData();
+      // Copy existing form fields
+      const currentForm = new FormData(formElement);
+      
+      currentForm.forEach((value, key) => {
+        formData.append(key, value);
+      });
+      
+      // Add images
+      formData.set('images', JSON.stringify(imageUrls));
+      
+      startTransition(() => {
+        formAction(formData);
+      });
+    } catch (error) {
+      console.error('Submit error', error);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -138,8 +181,8 @@ export default function CreateFab() {
                 </button>
               </div>
 
-              <form action={formAction} className="flex flex-col gap-4">
-                <input type="hidden" name="images" value={JSON.stringify(images)} />
+              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                {/* Images hidden input not needed as we inject it manually, but kept for reference if needed */}
                 
                 <div className="relative">
                   <textarea
@@ -152,11 +195,11 @@ export default function CreateFab() {
                 </div>
 
                 {/* Image Previews */}
-                {images.length > 0 && (
+                {previews.length > 0 && (
                   <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                    {images.map((img, idx) => (
+                    {previews.map((img, idx) => (
                       <div key={idx} className="relative flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden group">
-                        <img src={img} alt="Preview" className="w-full h-full object-cover" />
+                        <img src={img} alt="预览" className="w-full h-full object-cover" />
                         <button
                           type="button"
                           onClick={() => removeImage(idx)}
@@ -172,7 +215,7 @@ export default function CreateFab() {
                 <div className="flex gap-2 overflow-x-auto pb-2">
                   <label className={`flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl text-slate-500 text-sm font-medium hover:bg-slate-100 transition-colors cursor-pointer ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
                     <ImageIcon size={16} />
-                    {isUploading ? '上传中...' : '添加照片'}
+                    添加照片
                     <input 
                       type="file" 
                       multiple 
@@ -241,10 +284,10 @@ export default function CreateFab() {
 
                 <button
                   type="submit"
-                  disabled={isPending}
+                  disabled={isPending || isTransitionPending || isUploading}
                   className="w-full bg-slate-800 text-white py-4 rounded-xl font-medium tracking-wide shadow-lg hover:shadow-xl hover:bg-slate-900 active:scale-[0.98] transition-all disabled:opacity-70 flex items-center justify-center gap-2"
                 >
-                  {isPending ? '发布中...' : '发布'}
+                  {isPending || isTransitionPending || isUploading ? '发布中...' : '发布'}
                 </button>
               </form>
             </motion.div>
