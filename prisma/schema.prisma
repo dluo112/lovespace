@@ -20,6 +20,7 @@ model User {
   lat       Float?    // Latitude
   lng       Float?    // Longitude
   locationTime DateTime? // When location was last updated
+  lastLogin DateTime? // Last login time
 }
 
 enum Role {

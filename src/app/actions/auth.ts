@@ -63,6 +63,12 @@ export async function login(prevState: any, formData: FormData) {
     }
 
     // 2. Set Session
+    // Update lastLogin time
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLogin: new Date() }
+    });
+
     const cookieStore = await cookies();
     
     cookieStore.set('auth_token', 'valid_token', {

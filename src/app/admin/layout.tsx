@@ -1,5 +1,6 @@
 import BottomNav from '@/components/BottomNav';
 import CreateFab from '@/components/CreateFab';
+import LocationUpdater from '@/components/LocationUpdater';
 
 export default function AdminLayout({
   children,
@@ -8,6 +9,7 @@ export default function AdminLayout({
 }) {
   return (
     <div className="min-h-screen pb-24">
+      <LocationUpdater />
       {children}
       <CreateFab />
       <BottomNav />
