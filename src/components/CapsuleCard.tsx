@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import { Lock, Unlock, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 
 interface CapsuleProps {
   capsule: {
     id: string;
     content: string;
+    images?: string[] | any;
     unlockDate: Date;
     isOpened: boolean;
     userId: string;
@@ -144,6 +146,23 @@ export default function CapsuleCard({ capsule, currentUserId }: CapsuleProps) {
                     <p className="text-slate-700 leading-relaxed font-serif text-base">
                         {capsule.content}
                     </p>
+
+                    {/* Images Grid */}
+                    {Array.isArray(capsule.images) && capsule.images.length > 0 && (
+                        <div className="grid grid-cols-2 gap-3 mt-6">
+                            {capsule.images.map((img: string, idx: number) => (
+                                <div key={idx} className="relative aspect-square rounded-xl overflow-hidden bg-slate-100 shadow-sm border border-slate-100">
+                                    <Image 
+                                        src={img} 
+                                        alt={`Memory ${idx}`}
+                                        fill
+                                        className="object-cover"
+                                        sizes="(max-width: 768px) 50vw, 33vw"
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 <div className="mt-6 text-center">
